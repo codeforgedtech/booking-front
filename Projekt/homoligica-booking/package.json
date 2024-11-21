@@ -10,9 +10,14 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.46.1",
+    "bcryptjs": "^2.4.3",
     "next": "15.0.3",
     "react": "19.0.0-rc-66855b96-20241106",
-    "react-dom": "19.0.0-rc-66855b96-20241106"
+    "react-calendar": "^5.1.0",
+    "react-dom": "19.0.0-rc-66855b96-20241106",
+    "react-modal": "^3.16.1",
+    "react-router": "^6.28.0",
+    "react-router-dom": "^6.28.0"
   },
   "devDependencies": {
     "@types/node": "^20",
