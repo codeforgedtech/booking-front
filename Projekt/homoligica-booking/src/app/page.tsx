@@ -4,14 +4,28 @@
 import { useState, useEffect } from 'react';
 import Modal from 'react-modal';
 import { supabase } from './lib/supabase';
-import logo from"../app/images/homoligic.svg"
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css'; 
+interface Service {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+}
 
+interface Category {
+  id: number;
+  name: string;
+  services: { id: number; name: string; description: string; price: number }[];
+}
 if (typeof window !== 'undefined') {
   Modal.setAppElement(document.body);
 }
 
+
+
 const HomePage = () => {
-  const [categories, setCategories] = useState([]); 
+  const [categories, setCategories] = useState<Category[]>([]);
   const [expandedCategory, setExpandedCategory] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false); 
   const [selectedService, setSelectedService] = useState<any | null>(null); 
@@ -22,11 +36,25 @@ const HomePage = () => {
   const [user, setUser] = useState<any | null>(null); 
   const [openHours, setOpenHours] = useState<any[]>([])
 
-useEffect(() => {
+  useEffect(() => {
     const fetchCategories = async () => {
-      const { data, error } = await supabase.from('categories').select('id, name, services (id, name, description, price)');
-      if (!error) setCategories(data || []);
+      const { data, error } = await supabase
+        .from('categories')
+        .select('id, name, services (id, name, description, price)');
+  
+      if (!error && Array.isArray(data)) {
+        // Format the data into the correct structure
+        const formattedData: Category[] = data.map(category => ({
+          id: category.id,
+          name: category.name,
+          services: Array.isArray(category.services) ? category.services : [],
+        }));
+  
+        // Set the state with the formatted data
+        setCategories(formattedData);
+      }
     };
+  
     fetchCategories();
   }, []);
 
@@ -58,8 +86,21 @@ useEffect(() => {
 
   const openBookingModal = async (service: any) => {
     if (!user) {
-      alert('Logga in för att boka en tid.');
-      setIsLoginModalOpen(true);
+      toast.info(
+        <div>
+          <span>Du måste vara inloggad för att boka en tid.</span>
+          <button 
+            onClick={() => {
+              setIsLoginModalOpen(true); // Öppnar inloggningsmodalen
+              toast.dismiss(); // Stänger toasten när användaren klickar
+            }}
+            style={{ color: 'blue', fontWeight: 'bold', cursor: 'pointer' }}
+          >
+            Logga in
+          </button>
+        </div>, 
+        { autoClose: false } // Gör så att toasten inte försvinner automatiskt
+      );
       return;
     }
 
@@ -97,7 +138,7 @@ useEffect(() => {
     const { data: userData, error: userError } = await supabase.auth.getUser();
   
     if (userError || !userData) {
-      alert('Du måste vara inloggad för att boka en tid.');
+      toast('Du måste vara inloggad för att boka en tid.');
       return;
     }
   
@@ -113,7 +154,7 @@ useEffect(() => {
   .single();
 
 if (userFetchError || !userInfo) {
-  alert('Kunde inte hämta användardata. Försök igen.');
+  toast.error('Kunde inte hämta användardata. Försök igen.');
   return;
 }
   
@@ -137,7 +178,7 @@ if (userFetchError || !userInfo) {
   
     if (bookingError) {
       console.error('Kunde inte skapa bokning:', bookingError);
-      alert('Det gick inte att boka tiden. Försök igen.');
+      toast.warning('Det gick inte att boka tiden. Försök igen.');
       return;
     }
   
@@ -149,9 +190,9 @@ if (userFetchError || !userInfo) {
   
     if (slotError) {
       console.error('Kunde inte uppdatera slot:', slotError);
-      alert('Bokningen registrerades men tiden kunde inte markeras som bokad.');
+      toast.warning('Bokningen registrerades men tiden kunde inte markeras som bokad.');
     } else {
-      alert('Bokningen är bekräftad!');
+      toast.success('Bokningen är bekräftad!');
       closeModal(); // Stäng modal efter lyckad bokning
     }
   };
@@ -170,9 +211,9 @@ if (userFetchError || !userInfo) {
   const handleLogin = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      alert('Fel vid inloggning: ' + error.message);
+      toast.error('Fel vid inloggning: ' + error.message);
     } else {
-      alert('Inloggad!');
+      toast.success('Inloggad!');
       setIsLoginModalOpen(false);
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user || null);
@@ -407,7 +448,7 @@ if (userFetchError || !userInfo) {
         });
 
         if (error) {
-          alert('Fel vid registrering: ' + error.message);
+          toast.error('Fel vid registrering: ' + error.message);
           return;
         }
 
@@ -423,14 +464,14 @@ if (userFetchError || !userInfo) {
         ]);
 
         if (userInsertError) {
-          alert('Fel vid sparning av användaruppgifter: ' + userInsertError.message);
+          toast.error('Fel vid sparning av användaruppgifter: ' + userInsertError.message);
         } else {
-          alert('Registrerad! Logga in för att fortsätta.');
+        toast.success('Registrerad! Logga in för att fortsätta.');
           setIsRegisterModalOpen(false);
         }
       } catch (err) {
         console.error('Ett fel uppstod:', err);
-        alert('Ett oväntat fel inträffade, vänligen försök igen.');
+        toast.warning('Ett oväntat fel inträffade, vänligen försök igen.');
       }
     }}
   >
@@ -467,7 +508,7 @@ if (userFetchError || !userInfo) {
     </button>
   </form>
 </Modal>
-
+<ToastContainer />
      
     </div>
   );
