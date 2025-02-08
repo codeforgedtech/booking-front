@@ -1,6 +1,6 @@
 import { useRouter } from 'next/router';
 import { useState } from 'react';
-import { supabase } from './lib/supabase';
+import { supabase } from '../lib/supabase';
 
 const BookingDetails = () => {
   const router = useRouter();
